@@ -1,119 +1,133 @@
 import React, { Component } from 'react'
-import { ImageBackground, Text, View, StyleSheet, FlatList, TouchableOpacity, Platform } from 'react-native'
+import {
+    Platform,
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    TextInput,
+    TouchableWithoutFeedback,
+    Modal
+} from 'react-native'
+
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 import commonStyles from '../commonStyles'
-import todayImage from '../../assets/imgs/today.jpg'
-
-import Icon from 'react-native-vector-icons/FontAwesome'
 import moment from 'moment'
 import 'moment/locale/pt-br'
 
-import Task from '../components/Task'
+const initialState = { desc: '', date: new Date(), showDatePicker: false }
 
-export default class TaskList extends Component {
+export default class AddTask extends Component {
     state = {
-        showDoneTasks: true,
-        visibleTasks: [],
-        tasks: [
-            {
-                id: Math.random(),
-                desc: 'Livro 1',
-                estimateAt: new Date(),
-                doneAt: new Date()
-            }, {
-                id: Math.random(),
-                desc: 'Livro 2',
-                estimateAt: new Date(),
-                doneAt: new Date()
-            },
-        ]
+        ...initialState
     }
 
-    componentDidMount = () => {
-        this.filterTasks()
-    }
-
-    toggleFilter = () => {
-        this.setState({ showDoneTasks: !this.state.showDoneTasks }, this.filterTasks)
-    }
-
-    filterTasks = () => {
-        let visibleTasks = null
-        if (this.state.showDoneTasks) {
-            visibleTasks = [...this.state.tasks]
-        } else {
-            const pending = task => task.doneAt === null
-            visibleTasks = this.state.tasks.filter(pending)
+    save = () => {
+        const newTask = {
+            desc: this.state.desc,
+            date: this.state.date
         }
-
-        this.setState({ visibleTasks })
+        this.props.onSave && this.props.onSave(newTask)
+        this.setState({ ...initialState })
     }
 
-    toggleTask = taskId => {
-        const tasks = [...this.state.tasks]
-        tasks.forEach(task => {
-            if (task.id === taskId)
-                task.doneAt = task.doneAt ? null : new Date()
-        })
-        this.setState({ tasks }, this.filterTasks)
+    getDatePicker = () => {
+        let datePicker = <DateTimePicker value={this.state.date}
+            onChange={(_, date) => this.setState({ date, showDatePicker: false })}
+            mode='date' />
+        
+        const dateString = moment(this.state.date).locale('pt-br').format('ddd, D [de] MMMM [de] YYYY')
+
+        if (Platform.OS === 'android')
+            datePicker = (
+                <View>
+                    <TouchableOpacity>
+                        <Text style={styles.date} onPress={() => this.setState({showDatePicker: true})}>
+                            {dateString}
+                        </Text>
+                    </TouchableOpacity>
+                    {this.state.showDatePicker && datePicker}
+                </View>
+            )
+        return datePicker
     }
 
     render() {
-        const today = moment().locale('pt-br').format('ddd, D [de] MMMM')
         return (
-            <View style={styles.container}>
-                <ImageBackground source={todayImage} style={styles.background}>
-                    <View style={styles.iconBar}>
-                        <TouchableOpacity onPress={this.toggleFilter}>
-                            <Icon name={this.state.showDoneTasks ? 'eye' : 'eye-slash'} size={20} color={commonStyles.colors.secondary} />
+            <Modal
+                transparent={true}
+                visible={this.props.isVisible}
+                onRequestClose={this.props.onCancel}
+                animationType='slide'>
+                <TouchableWithoutFeedback
+                    onPress={this.props.onCancel}>
+                    <View style={styles.background}></View>
+                </TouchableWithoutFeedback>
+                <View style={styles.container}>
+                    <Text style={styles.header}>Nova Tarefa</Text>
+                    
+                    <TextInput style={styles.input} placeholder="informe a descrição"
+                        onChangeText={desc => this.setState({desc})}
+                        value={this.state.desc} />
+                    
+                    {this.getDatePicker()}
+                    
+                    <View style={styles.buttons}>
+                        <TouchableOpacity onPress={this.props.onCancel}>
+                            <Text style={styles.button}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={this.save}>
+                            <Text style={styles.button}>Salvar</Text>
                         </TouchableOpacity>
                     </View>
-                    <View style={styles.titleBar}>
-                        <Text style={styles.title}>Hoje</Text>
-                        <Text style={styles.subtitle}>{today}</Text>
-                    </View>
-                </ImageBackground>
-                <View style={styles.taskList}>
-                    <FlatList data={this.state.visibleTasks}
-                        keyExtractor={item => `${item.id}`}
-                        renderItem={({ item }) => <Task {...item} toggleTask={this.toggleTask} />} />
                 </View>
-            </View>
+                <TouchableWithoutFeedback
+                    onPress={this.props.onCancel}>
+                    <View style={styles.background}></View>
+                </TouchableWithoutFeedback>
+            </Modal>
         )
     }
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
     background: {
-        flex: 3
-    },
-    taskList: {
-        flex: 7
-    },
-    titleBar: {
         flex: 1,
-        justifyContent: 'flex-end'
+        backgroundColor: 'rgba(0,0,0,0.7)',
     },
-    title: {
-        fontSize: 50,
+    container: {
+        backgroundColor: '#FFF'
+    },
+    header: {
         fontFamily: commonStyles.fontFamily,
+        backgroundColor: commonStyles.colors.today,
         color: commonStyles.colors.secondary,
-        marginLeft: 20,
+        textAlign: "center",
+        padding: 15,
+        fontSize: 18
     },
-    subtitle: {
-        fontSize: 20,
-        marginLeft: 20,
-        marginBottom: 20,
+    input: {
         fontFamily: commonStyles.fontFamily,
-        color: commonStyles.colors.secondary,
+        height: 40,
+        margin: 15,
+        backgroundColor: '#FFF',
+        borderWidth: 1,
+        borderColor: '#E3E3E3',
+        borderRadius: 6
     },
-    iconBar: {
-        marginHorizontal: 20,
-        marginTop: Platform.OS === 'ios' ? 40 : 15,
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
+    buttons: {
+        flexDirection: "row",
+        justifyContent: "flex-end"
+    },
+    button: {
+        margin: 20,
+        marginRight: 30,
+        color: commonStyles.colors.today
+    },
+    date: {
+        fontFamily: commonStyles.fontFamily,
+        fontSize: 16,
+        marginLeft: 16,
     }
 })
