@@ -1,5 +1,6 @@
 import React from 'react'
-import { Text,
+import {
+    Text,
     View,
     StyleSheet,
     TouchableWithoutFeedback,
@@ -12,9 +13,7 @@ import 'moment/locale/pt-br'
 
 import commonStyles from '../commonStyles'
 
-
 export default props => {
-
     const doneOrNotStyle = props.doneAt != null ? { textDecorationLine: 'line-through' } : {}
 
     const date = props.doneAt ? props.doneAt : props.estimateAt
