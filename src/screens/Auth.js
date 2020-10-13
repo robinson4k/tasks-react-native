@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 
 import axios from 'axios'
+import AsyncStorage from '@react-native-community/async-storage'
 
 import backgroundImage from '../../assets/imgs/login.jpg'
 import commonStyles from '../commonStyles'
@@ -22,8 +23,8 @@ import {
 
 const initialState = {
     name: '',
-    email: 'teste@teste.com',
-    password: '123456',
+    email: '',
+    password: '',
     confirmPassword: '',
     stageNew: false
 }
@@ -65,6 +66,7 @@ export default class Auth extends Component {
                 password: this.state.password,
             })
 
+            AsyncStorage.setItem('userData', JSON.stringify(res.data))
             axios.defaults.headers.common['Authorization'] = `bearer ${res.data.token}`
             this.props.navigation.navigate('Home', res.data)
         } catch (e) {
@@ -95,7 +97,12 @@ export default class Auth extends Component {
                         { this.state.stageNew ? 'Crie a sua conta' : 'Informe seus dados' }
                     </Text>
                     {this.state.stageNew &&
-                        <AuthInput icon='user' style={styles.input} placeholder='Nome' value={this.state.name} onChangeText={name => this.setState({ name })} />
+                        <AuthInput
+                            icon='user'
+                            style={styles.input}
+                            placeholder='Nome'
+                            value={this.state.name}
+                            onChangeText={name => this.setState({ name })} />
                     }
                     <AuthInput
                         icon='at'
@@ -111,7 +118,13 @@ export default class Auth extends Component {
                         onChangeText={password => this.setState({ password })}
                         secureTextEntry={true} />
                     {this.state.stageNew &&
-                        <AuthInput icon='asterisk' style={styles.input} placeholder='Confirmação de senha' value={this.state.confirmPassword} onChangeText={confirmPassword => this.setState({ confirmPassword })} secureTextEntry={true} />
+                        <AuthInput
+                            icon='asterisk'
+                            style={styles.input}
+                            placeholder='Confirmação de senha'
+                            value={this.state.confirmPassword}
+                            onChangeText={confirmPassword => this.setState({ confirmPassword })}
+                            secureTextEntry={true} />
                     }
                     <TouchableOpacity onPress={this.signinOrSignup} disabled={!validForm}>
                         <View style={ [styles.button, validForm ? {} : {backgroundColor: '#AAA'}] }>
